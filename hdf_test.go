@@ -64,6 +64,9 @@ func TestHdfObjValueWithChildren(t *testing.T) {
 	}
 }
 
+/*
+ * An object can be linked to another object.
+ */
 func TestHdfLinkedTrees(t *testing.T) {
 	obj := hdf.New()
 	obj.SetValue("config", "Config Tree")
