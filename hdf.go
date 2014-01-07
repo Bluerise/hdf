@@ -123,6 +123,12 @@ func (hdf *HDF) parseLine(scanner *bufio.Scanner) bool {
 	return true
 }
 
+// GetObject retrieves an object identified by 'path'.
+// It returns nil if the object doesn't exist.
+func (hdf *HDF) GetObject(path string) *HDF {
+	return getObjectByPath(hdf, path)
+}
+
 // GetValue retrieves the value of an object identified by 'path' as string.
 // It returns the passed alternative string, if the object or value
 // does not exist.

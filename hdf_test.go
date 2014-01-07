@@ -102,3 +102,18 @@ func TestHDFSetRetrieveIntegerValue(t *testing.T) {
 		t.Errorf("GetIntValue with non-existant object failed.\n")
 	}
 }
+
+/*
+ * Get child object and check its value.
+ */
+func TestHDFGetObject(t *testing.T) {
+	obj := hdf.New()
+	obj.SetValue("config.subtree", "test")
+	config := obj.GetObject("config")
+	if config == nil {
+		t.Errorf("GetObject after SetValue failed.\n")
+	}
+	if config.GetValue("subtree", "") != "test" {
+		t.Errorf("GetValue from child object failed.\n")
+	}
+}
