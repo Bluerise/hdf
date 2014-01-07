@@ -26,6 +26,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"strconv"
 )
 
 const (
@@ -122,8 +123,8 @@ func (hdf *HDF) parseLine(scanner *bufio.Scanner) bool {
 	return true
 }
 
-// GetValue retrieves the value of an object identified by 'path'.
-// I returns the passed alternative string, if the object or value
+// GetValue retrieves the value of an object identified by 'path' as string.
+// It returns the passed alternative string, if the object or value
 // does not exist.
 func (hdf *HDF) GetValue(path string, alt string) string {
 	obj := getObjectByPath(hdf, path)
@@ -134,11 +135,31 @@ func (hdf *HDF) GetValue(path string, alt string) string {
 	}
 }
 
-// SetValue sets the value of an object identified by 'path'.
+// GetIntValue retrieves the value of an object identified by 'path' as integer.
+// It returns the passed alternative integer, if the object or value
+// does not exist.
+func (hdf *HDF) GetIntValue(path string, alt int) int {
+	s := hdf.GetValue(path, "")
+	if len(s) != 0 {
+		i, err := strconv.Atoi(s)
+		if err == nil {
+			return i
+		}
+	}
+	return alt
+}
+
+// SetValue sets the value of an object identified by 'path' as string.
 // It creates the object if it doesn't exist.
 func (hdf *HDF) SetValue(path string, value string) {
 	obj := getObjectByPathOrCreate(hdf, path)
 	obj.Value = value
+}
+
+// SetIntValue sets the value of an object identified by 'path' as integer.
+// It creates the object if it doesn't exist.
+func (hdf *HDF) SetIntValue(path string, value int) {
+	hdf.SetValue(path, strconv.Itoa(value))
 }
 
 // DeleteValue deletes the value of an object, identified by 'path',

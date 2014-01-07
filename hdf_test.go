@@ -80,3 +80,25 @@ func TestHdfLinkedTrees(t *testing.T) {
 		t.Errorf("SetValue on Link Child failed.\n")
 	}
 }
+
+/*
+ * Set and retrieve values as integers.
+ */
+func TestHDFSetRetrieveIntegerValue(t *testing.T) {
+	obj := hdf.New()
+	obj.SetValue("config", "test")
+	if obj.GetIntValue("config", 0) != 0 {
+		t.Errorf("GetIntValue after SetValue worked.\n")
+	}
+	obj.SetValue("config", "1")
+	if obj.GetIntValue("config", 0) != 1 {
+		t.Errorf("GetIntValue after SetValue failed.\n")
+	}
+	obj.SetIntValue("config", 2)
+	if obj.GetIntValue("config", 0) != 2 {
+		t.Errorf("GetIntValue after SetIntValue failed.\n")
+	}
+	if obj.GetIntValue("link", 1) != 1 {
+		t.Errorf("GetIntValue with non-existant object failed.\n")
+	}
+}
