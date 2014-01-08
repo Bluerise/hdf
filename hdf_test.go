@@ -117,3 +117,18 @@ func TestHDFGetObject(t *testing.T) {
 		t.Errorf("GetValue from child object failed.\n")
 	}
 }
+
+/*
+ * Get child object and check its name.
+ */
+func TestHDFObjectName(t *testing.T) {
+	obj := hdf.New()
+	obj.SetValue("config.subtree", "test")
+	config := obj.GetObject("config.subtree")
+	if config == nil {
+		t.Errorf("GetObject after SetValue failed.\n")
+	}
+	if config.ObjectName() != "subtree" {
+		t.Errorf("ObjectName of child object doesn't work.\n")
+	}
+}

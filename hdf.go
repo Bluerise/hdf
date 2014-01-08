@@ -185,6 +185,11 @@ func (hdf *HDF) LinkValue(from string, to string) {
 	obj.Link = to
 }
 
+// ObjectName returns the Name of the object.
+func (hdf *HDF) ObjectName() string {
+	return hdf.Name
+}
+
 // addObject inserts an Object as its child.
 func (hdf *HDF) addObject(node *HDF) {
 	node.Parent = hdf
