@@ -108,7 +108,7 @@ func (hdf *HDF) parseLine(scanner *bufio.Scanner) bool {
 		hdf.SetValue(ret[1], val)
 	} else if m, _ := regexp.MatchString(hdfRegexOpenTree, s); m {
 		ret := regexp.MustCompile(hdfRegexOpenTree).FindStringSubmatch(s)
-		hdf = getObjectByPathOrCreate(hdf, ret[1])
+		hdf = hdf.getObjectByPathOrCreate(ret[1])
 		for hdf.parseLine(scanner) {
 		}
 		Debugf(fmt.Sprintf("open tree matched: %s\n", ret[1]))
@@ -126,14 +126,14 @@ func (hdf *HDF) parseLine(scanner *bufio.Scanner) bool {
 // GetObject retrieves an object identified by 'path'.
 // It returns nil if the object doesn't exist.
 func (hdf *HDF) GetObject(path string) *HDF {
-	return getObjectByPath(hdf, path)
+	return hdf.getObjectByPath(path)
 }
 
 // GetValue retrieves the value of an object identified by 'path' as string.
 // It returns the passed alternative string, if the object or value
 // does not exist.
 func (hdf *HDF) GetValue(path string, alt string) string {
-	obj := getObjectByPath(hdf, path)
+	obj := hdf.getObjectByPath(path)
 	if obj != nil && len(obj.Value) != 0 {
 		return obj.Value
 	} else {
@@ -158,7 +158,7 @@ func (hdf *HDF) GetIntValue(path string, alt int) int {
 // SetValue sets the value of an object identified by 'path' as string.
 // It creates the object if it doesn't exist.
 func (hdf *HDF) SetValue(path string, value string) {
-	obj := getObjectByPathOrCreate(hdf, path)
+	obj := hdf.getObjectByPathOrCreate(path)
 	obj.Value = value
 }
 
@@ -171,15 +171,15 @@ func (hdf *HDF) SetIntValue(path string, value int) {
 // DeleteValue deletes the value of an object, identified by 'path',
 // if it exists.
 func (hdf *HDF) DeleteValue(path string) {
-	obj := getObjectByPath(hdf, path)
+	obj := hdf.getObjectByPath(path)
 	if obj != nil {
-		deleteObject(obj.Parent, obj)
+		obj.Parent.deleteObject(obj)
 	}
 }
 
 // Link links one tree to another
 func (hdf *HDF) LinkValue(from string, to string) {
-	obj := getObjectByPathOrCreate(hdf, from)
+	obj := hdf.getObjectByPathOrCreate(from)
 	obj.Children = nil
 	obj.Value = ""
 	obj.Link = to
@@ -216,11 +216,11 @@ func (hdf *HDF) addObject(node *HDF) {
 // to the next child.  If it was only one child, delete the parent.
 // Else, go through all children and look for the child
 // Remove it from the list.
-func deleteObject(hdf *HDF, node *HDF) {
+func (hdf *HDF) deleteObject(node *HDF) {
 	if hdf.Children == node {
 		hdf.Children = node.Next
 		if hdf.Children == nil {
-			deleteObject(hdf.Parent, hdf)
+			hdf.Parent.deleteObject(hdf)
 		}
 		return
 	}
@@ -235,11 +235,11 @@ func deleteObject(hdf *HDF, node *HDF) {
 
 // getObjects iterates through all objects on the same level
 // to search for a specific object identified by 's'.
-func getObject(hdf *HDF, s string) *HDF {
+func (hdf *HDF) getObject(s string) *HDF {
 	for node := hdf; node != nil; node = node.Next {
 		if node.Name == s {
 			if len(node.Link) != 0 {
-				node = getObjectByPathOrCreate(node.getRoot(), node.Link)
+				node = node.getRoot().getObjectByPathOrCreate(node.Link)
 			}
 			return node
 		}
@@ -249,12 +249,12 @@ func getObject(hdf *HDF, s string) *HDF {
 
 // getObjectByPath splits the path and try to follow the path
 // down to the object.  It return the object.
-func getObjectByPath(hdf *HDF, s string) *HDF {
+func (hdf *HDF) getObjectByPath(s string) *HDF {
 	ss := splitPath(s)
 
 	for _, val := range ss {
 		hdf = hdf.Children
-		obj := getObject(hdf, val)
+		obj := hdf.getObject(val)
 		if obj == nil {
 			return nil
 		}
@@ -264,22 +264,22 @@ func getObjectByPath(hdf *HDF, s string) *HDF {
 }
 
 // createObject creates an object and links it to his parent.
-func createObject(parent *HDF, s string) *HDF {
+func (hdf *HDF) createObject(s string) *HDF {
 	var obj HDF
 	obj.Name = s
-	parent.addObject(&obj)
+	hdf.addObject(&obj)
 	return &obj
 }
 
 // createObjectByPath creates an object and all objects needed in
 // tree.
-func createObjectByPath(hdf *HDF, path string) *HDF {
+func (hdf *HDF) createObjectByPath(path string) *HDF {
 	ss := splitPath(path)
 	var obj *HDF = nil
 	for _, val := range ss {
-		obj = getObject(hdf.Children, val)
+		obj = hdf.Children.getObject(val)
 		if obj == nil {
-			obj = createObject(hdf, val)
+			obj = hdf.createObject(val)
 		}
 		hdf = obj
 	}
@@ -291,10 +291,10 @@ func createObjectByPath(hdf *HDF, path string) *HDF {
 
 // getObjectByPathOrCreate retreives an Object identified by 'path'.
 // If it doesn't exist, it create it.
-func getObjectByPathOrCreate(hdf *HDF, path string) *HDF {
-	obj := getObjectByPath(hdf, path)
+func (hdf *HDF) getObjectByPathOrCreate(path string) *HDF {
+	obj := hdf.getObjectByPath(path)
 	if obj == nil {
-		obj = createObjectByPath(hdf, path)
+		obj = hdf.createObjectByPath(path)
 	}
 	return obj
 }
@@ -308,7 +308,7 @@ func (hdf *HDF) getRoot() *HDF {
 }
 
 // hasChildByObject checks that a node has a child identified by an object reference.
-func hasChildByObject(hdf *HDF, obj *HDF) bool {
+func (hdf *HDF) hasChildByObject(obj *HDF) bool {
 	exist := false
 	for node := hdf.Children; node != nil; node = node.Next {
 		if node == obj {
@@ -320,7 +320,7 @@ func hasChildByObject(hdf *HDF, obj *HDF) bool {
 }
 
 // hasChildByName checks that a node has a child identified by 's'.
-func hasChildByName(hdf *HDF, s string) bool {
+func (hdf *HDF) hasChildByName(s string) bool {
 	exist := false
 	for node := hdf.Children; node != nil; node = node.Next {
 		if node.Name == s {
